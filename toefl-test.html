@@ -1,0 +1,2399 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TOEFL Simulation — Vocal Academy صدا</title>
+  <meta name="description" content="Full TOEFL iBT 2026 simulation test for Vocal Academy students." />
+  <!-- Supabase JS SDK — required for level-based auth guard -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+  /* ═══════════════════════════════════════════════
+     TOEFL PREP LEVEL GUARD
+     Only students whose level = "TOEFL Prep" may
+     access this page. Everyone else → dashboard.html
+     Unauthenticated users → login.html
+  ═══════════════════════════════════════════════ */
+  (async function toeflGuard() {
+    const SUPABASE_URL = 'https://ukoegeqgkqqnbafkbkqg.supabase.co';
+    // Use the same anon key as the rest of the app
+    const SUPABASE_KEY = (() => {
+      // Try to read from any existing global, otherwise fall back to the
+      // known anon key embedded in admin.html (same project).
+      return (typeof SUPABASE_ANON_KEY !== 'undefined' && SUPABASE_ANON_KEY)
+        ? SUPABASE_ANON_KEY
+        : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrb2VnZXFna3FxbmJhZmtia3FnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5Njg2NDQsImV4cCI6MjA5MjU0NDY0NH0.QWvzVZ2gmGvFbTGL-O-QPxcLeHZrWFpa0DubLAZLBf8';
+    })();
+
+    try {
+      if (!window.supabase) return; // SDK not loaded yet — skip guard (fail-open so page renders)
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      const { data: sessionData } = await sb.auth.getSession();
+      const session = sessionData?.session;
+
+      if (!session) {
+        // Not logged in → login page
+        window.location.replace('login.html');
+        return;
+      }
+
+      // Fetch the student record for this user
+      const userId = session.user.id;
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/students?select=level,status&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${session.access_token}` } }
+      );
+      const rows = await res.json();
+      const student = Array.isArray(rows) ? rows[0] : null;
+
+      if (!student) {
+        // No student record found → send to dashboard to handle
+        window.location.replace('dashboard.html');
+        return;
+      }
+
+      if ((student.level || '').trim() !== 'TOEFL Prep') {
+        // Not a TOEFL Prep student → back to their dashboard
+        window.location.replace('dashboard.html');
+        return;
+      }
+
+      // ✅ Student is TOEFL Prep — allow page to load normally
+
+    } catch (err) {
+      // Guard failed — fail-open so page still loads
+      console.warn('TOEFL guard error (non-blocking):', err);
+    }
+  })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <style>
+    /* ══════════════════════════════════════════════
+       TOEFL TEST PAGE — VOCAL ACADEMY (2026 Edition)
+    ══════════════════════════════════════════════ */
+
+    /* ── KEYFRAMES ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.45; }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50%       { transform: translateY(-8px); }
+    }
+    @keyframes barGrow {
+      from { width: 0%; }
+    }
+    @keyframes ringPop {
+      0%   { transform: scale(0.7); opacity: 0; }
+      70%  { transform: scale(1.05); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes cardDrop {
+      from { opacity: 0; transform: translateY(-32px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes dotPop {
+      0%   { transform: scale(0); opacity: 0; }
+      60%  { transform: scale(1.25); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes optionSlide {
+      from { opacity: 0; transform: translateX(12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes toastSlide {
+      from { opacity: 0; transform: translateX(120px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes progressFill {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+    @keyframes badgePop {
+      0%  { transform: scale(0) rotate(-8deg); }
+      70% { transform: scale(1.1) rotate(2deg); }
+      100%{ transform: scale(1) rotate(0); }
+    }
+
+    /* ── SCREEN MANAGER ── */
+    .screen {
+      display: none;
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+    .screen.active {
+      display: block;
+      animation: screenIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+    .screen.screen-exit {
+      display: block;
+      animation: screenOut 0.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+
+    @keyframes screenIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes screenOut {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to   { opacity: 0; transform: translateY(-12px) scale(0.98); }
+    }
+
+    /* ── SELECTION SCREEN ── */
+    .selection-hero {
+      min-height: 100vh;
+      padding-top: var(--nav-h);
+      background: var(--surface);
+    }
+
+    .selection-header {
+      background: linear-gradient(135deg, var(--ink) 0%, #1a3d3d 100%);
+      padding: 72px 5% 88px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .selection-header::before {
+      content: 'TOEFL';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-display);
+      font-size: 16rem;
+      font-weight: 900;
+      color: rgba(255,255,255,0.022);
+      pointer-events: none;
+      white-space: nowrap;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .selection-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 60px;
+      background: linear-gradient(to top, rgba(26,26,46,0.15), transparent);
+      pointer-events: none;
+    }
+
+    /* Animated particles */
+    .header-particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      width: 2px; height: 2px;
+      border-radius: 50%;
+      background: rgba(200,149,58,0.4);
+      animation: float var(--dur, 6s) ease-in-out infinite var(--delay, 0s);
+    }
+
+    .selection-header .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(200,149,58,0.18);
+      border: 1px solid rgba(200,149,58,0.45);
+      color: var(--gold-light);
+      padding: 7px 20px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      animation: slideDown 0.5s 0.1s ease both;
+    }
+
+    .selection-header h1 {
+      color: white;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      margin-bottom: 14px;
+      animation: slideDown 0.5s 0.2s ease both;
+    }
+
+    .selection-header p {
+      color: rgba(255,255,255,0.6);
+      font-size: 1.025rem;
+      max-width: 540px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+      animation: slideDown 0.5s 0.3s ease both;
+    }
+
+    /* ── 2026 INFO BANNER ── */
+    .info-banner-2026 {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(200,149,58,0.3);
+      border-radius: 14px;
+      padding: 18px 22px;
+      max-width: 700px;
+      margin: 0 auto;
+      text-align: left;
+      animation: slideDown 0.5s 0.4s ease both;
+      backdrop-filter: blur(8px);
+    }
+
+    .info-banner-2026 .ib-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .info-banner-2026 .ib-content h3 {
+      color: var(--gold-light);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .info-banner-2026 .ib-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .info-pill {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.85);
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* ── FORMAT OVERVIEW STRIP ── */
+    .format-strip {
+      background: white;
+      border-bottom: 1px solid rgba(26,26,46,0.07);
+      padding: 0 5%;
+      overflow-x: auto;
+    }
+
+    .format-strip-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0;
+    }
+
+    .format-item {
+      flex: 1;
+      min-width: 160px;
+      padding: 20px 20px;
+      border-right: 1px solid rgba(26,26,46,0.06);
+      text-align: center;
+      position: relative;
+      transition: background 0.2s ease;
+    }
+
+    .format-item:last-child { border-right: none; }
+
+    .format-item:hover {
+      background: rgba(45,125,125,0.04);
+    }
+
+    .format-item-icon {
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+    }
+
+    .format-item-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .format-item-detail {
+      font-size: 0.72rem;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    .format-item-score {
+      display: inline-block;
+      margin-top: 6px;
+      background: var(--teal-pale);
+      color: var(--teal);
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    /* TPO Grid */
+    .tpo-section {
+      padding: 60px 5%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .tpo-section-title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .tpo-section-title h2 {
+      font-size: 1.4rem;
+      font-family: var(--font-body);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .tpo-section-title .line {
+      flex: 1;
+      height: 1px;
+      background: rgba(26,26,46,0.08);
+    }
+
+    .tpo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 14px;
+    }
+
+    .tpo-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1.5px solid rgba(26,26,46,0.07);
+      padding: 22px 18px;
+      cursor: pointer;
+      transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.4s both;
+    }
+
+    .tpo-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--teal), var(--gold));
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+
+    .tpo-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(45,125,125,0.03) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+
+    .tpo-card:hover {
+      border-color: var(--teal);
+      box-shadow: 0 8px 32px rgba(45,125,125,0.12);
+      transform: translateY(-5px);
+    }
+
+    .tpo-card:hover::before  { opacity: 1; }
+    .tpo-card:hover::after   { opacity: 1; }
+
+    .tpo-card-num {
+      font-family: var(--font-display);
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: rgba(26,26,46,0.055);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .tpo-card h3 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      font-family: var(--font-body);
+      margin-bottom: 4px;
+    }
+
+    .tpo-card-meta {
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      margin-bottom: 14px;
+    }
+
+    .tpo-progress-track {
+      height: 4px;
+      background: var(--surface-2);
+      border-radius: 2px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .tpo-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--teal), var(--gold));
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .tpo-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tpo-status {
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .tpo-status.new         { color: var(--teal); }
+    .tpo-status.done        { color: var(--success); }
+    .tpo-status.in-progress { color: var(--gold); }
+
+    .tpo-start-btn {
+      background: var(--ink);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 6px 16px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.18s ease, transform 0.18s ease;
+      letter-spacing: 0.03em;
+    }
+
+    .tpo-start-btn:hover {
+      background: var(--teal);
+      transform: scale(1.04);
+    }
+
+    /* ── TEST INTERFACE ── */
+    #screen-test {
+      min-height: 100vh;
+      background: var(--surface);
+      padding-top: var(--nav-h);
+    }
+
+    /* Test Top Bar */
+    .test-topbar {
+      position: fixed;
+      top: var(--nav-h);
+      left: 0; right: 0;
+      background: var(--ink);
+      color: white;
+      padding: 0 5%;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 900;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      animation: slideDown 0.3s ease both;
+    }
+
+    .test-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .test-title-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+    }
+
+    .test-section-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.07);
+      padding: 4px 14px;
+      border-radius: 100px;
+    }
+
+    .test-section-indicator span {
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .test-section-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: pulse 2s infinite;
+    }
+
+    /* Section Nav tabs */
+    .section-tabs {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .mobile-panel-toggle {
+      display: none;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-tab {
+      padding: 5px 13px;
+      border-radius: 7px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: transparent;
+      color: rgba(255,255,255,0.42);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .section-tab.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border-color: rgba(255,255,255,0.18);
+    }
+
+    .section-tab.done { color: #6fcf97; }
+
+    /* Timer */
+    .test-timer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-md);
+      padding: 6px 16px;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .test-timer.warning-bg {
+      background: rgba(255,80,80,0.15);
+      border-color: rgba(255,100,100,0.35);
+    }
+
+    .timer-icon { font-size: 0.95rem; }
+
+    .timer-display {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 0.06em;
+      min-width: 58px;
+      text-align: center;
+      transition: color 0.3s ease;
+    }
+
+    .timer-display.warning {
+      color: #ff8c8c;
+      animation: pulse 1s infinite;
+    }
+
+    /* Test Layout */
+    .test-layout {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      min-height: calc(100vh - var(--nav-h) - 54px);
+      margin-top: calc(var(--nav-h) + 54px);
+    }
+
+    /* Passage / Content Panel */
+    .test-passage-panel {
+      padding: 40px 48px;
+      border-right: 1px solid rgba(26,26,46,0.09);
+      overflow-y: auto;
+      max-height: calc(100vh - var(--nav-h) - 54px);
+    }
+
+    .passage-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--teal-pale);
+      color: var(--teal);
+      padding: 4px 14px;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      animation: badgePop 0.4s ease both;
+    }
+
+    .passage-title {
+      font-family: var(--font-display);
+      font-size: 1.55rem;
+      color: var(--ink);
+      margin-bottom: 22px;
+      line-height: 1.3;
+      animation: fadeUp 0.4s 0.05s ease both;
+    }
+
+    .passage-body {
+      font-size: 0.95rem;
+      line-height: 1.95;
+      color: var(--ink-soft);
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+
+    .passage-body p { margin-bottom: 1.2em; }
+
+    .passage-body p .highlight {
+      background: rgba(200,149,58,0.18);
+      border-radius: 3px;
+      padding: 1px 4px;
+    }
+
+    /* Question Panel */
+    .test-question-panel {
+      padding: 32px 26px;
+      overflow-y: auto;
+      max-height: calc(100vh - var(--nav-h) - 54px);
+      background: white;
+      border-left: 1px solid rgba(26,26,46,0.05);
+    }
+
+    .question-counter {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+
+    .q-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .q-dots {
+      display: flex;
+      gap: 5px;
+    }
+
+    .q-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+
+    .q-dot:hover       { transform: scale(1.25); background: rgba(45,125,125,0.3); }
+    .q-dot.answered    { background: var(--teal); }
+    .q-dot.current     { background: var(--gold); transform: scale(1.35); }
+
+    .question-text {
+      font-size: 0.97rem;
+      line-height: 1.72;
+      color: var(--ink);
+      font-weight: 500;
+      margin-bottom: 22px;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    /* Options */
+    .option-list {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-bottom: 28px;
+    }
+
+    .option-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 15px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid rgba(26,26,46,0.1);
+      cursor: pointer;
+      transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      background: white;
+      animation: optionSlide 0.25s both;
+    }
+
+    .option-item:nth-child(1) { animation-delay: 0.04s; }
+    .option-item:nth-child(2) { animation-delay: 0.08s; }
+    .option-item:nth-child(3) { animation-delay: 0.12s; }
+    .option-item:nth-child(4) { animation-delay: 0.16s; }
+
+    .option-item:hover {
+      border-color: var(--teal);
+      background: var(--teal-pale);
+      transform: translateX(3px);
+      box-shadow: 0 2px 12px rgba(45,125,125,0.08);
+    }
+
+    .option-item.selected {
+      border-color: var(--teal);
+      background: var(--teal-pale);
+      box-shadow: 0 2px 14px rgba(45,125,125,0.12);
+    }
+
+    .option-item.correct  { border-color: var(--success); background: #e6f5ec; }
+    .option-item.wrong    { border-color: var(--error);   background: #fce8e8; }
+
+    .option-letter {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--ink);
+      flex-shrink: 0;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .option-item:hover .option-letter,
+    .option-item.selected .option-letter { background: var(--teal); color: white; transform: scale(1.08); }
+    .option-item.correct .option-letter  { background: var(--success); color: white; }
+    .option-item.wrong .option-letter    { background: var(--error);   color: white; }
+
+    .option-text {
+      font-size: 0.87rem;
+      line-height: 1.55;
+      color: var(--ink);
+      padding-top: 4px;
+    }
+
+    /* Navigation Buttons */
+    .question-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 18px;
+      border-top: 1px solid rgba(26,26,46,0.07);
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      border: 1.5px solid rgba(26,26,46,0.14);
+      background: white;
+      color: var(--ink);
+    }
+
+    .nav-btn:hover          { border-color: var(--ink); background: var(--surface-2); transform: translateY(-1px); }
+    .nav-btn:disabled       { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .nav-btn:active:not(:disabled) { transform: scale(0.97); }
+
+    .nav-btn.primary {
+      background: var(--ink);
+      color: var(--gold-light);
+      border-color: var(--ink);
+    }
+    .nav-btn.primary:hover { background: var(--teal); border-color: var(--teal); color: white; }
+
+    /* Exit button */
+    #btn-exit-test {
+      font-size: 0.75rem;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.7);
+    }
+    #btn-exit-test:hover {
+      background: rgba(255,80,80,0.18);
+      border-color: rgba(255,80,80,0.4);
+      color: #ff9999;
+      transform: none;
+    }
+
+    /* ── REPORT SCREEN ── */
+    #screen-report {
+      min-height: 100vh;
+      padding-top: var(--nav-h);
+      background: var(--surface);
+      animation: fadeIn 0.4s ease both;
+    }
+
+    .report-hero {
+      background: linear-gradient(135deg, var(--ink) 0%, #1a3d3d 100%);
+      padding: 64px 5%;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .report-hero::before {
+      content: '✦';
+      position: absolute;
+      top: -60px; right: 5%;
+      font-size: 12rem;
+      color: rgba(200,149,58,0.04);
+      pointer-events: none;
+      animation: float 10s ease-in-out infinite;
+    }
+
+    .report-hero::after {
+      content: '✦';
+      position: absolute;
+      bottom: -50px; left: 3%;
+      font-size: 10rem;
+      color: rgba(45,125,125,0.05);
+      pointer-events: none;
+      animation: float 12s ease-in-out infinite 2s;
+    }
+
+    .report-score-ring {
+      width: 150px; height: 150px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+      border: 3px solid rgba(200,149,58,0.45);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 28px auto;
+      position: relative;
+      animation: ringPop 0.6s 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+      box-shadow: 0 0 40px rgba(200,149,58,0.12), inset 0 0 40px rgba(200,149,58,0.04);
+    }
+
+    .report-score-ring::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      background: rgba(200,149,58,0.06);
+    }
+
+    .report-score-num {
+      font-family: var(--font-display);
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--gold-light);
+      line-height: 1;
+      position: relative;
+      animation: countUp 0.4s 0.6s ease both;
+    }
+
+    .report-score-label {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.45);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      position: relative;
+    }
+
+    .report-hero h1 {
+      color: white;
+      margin-bottom: 8px;
+      font-size: 1.9rem;
+      animation: fadeUp 0.4s 0.4s ease both;
+    }
+
+    .report-hero > p {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.92rem;
+      animation: fadeUp 0.4s 0.5s ease both;
+    }
+
+    /* CEFR band display */
+    .cefr-band {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(200,149,58,0.25);
+      padding: 10px 22px;
+      border-radius: 100px;
+      margin-top: 16px;
+      animation: fadeUp 0.4s 0.6s ease both;
+    }
+    .cefr-band .cb-label {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.5);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .cefr-band .cb-val {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+    .cefr-band .cb-desc {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.65);
+      font-weight: 500;
+    }
+
+    .report-body {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 52px 5%;
+    }
+
+    .score-breakdown {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 52px;
+    }
+
+    .score-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(26,26,46,0.07);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      animation: fadeUp 0.4s both;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .score-card:hover {
+      box-shadow: 0 6px 24px rgba(26,26,46,0.08);
+      transform: translateY(-2px);
+    }
+
+    .score-card:nth-child(1) { animation-delay: 0.1s; }
+    .score-card:nth-child(2) { animation-delay: 0.15s; }
+    .score-card:nth-child(3) { animation-delay: 0.2s; }
+    .score-card:nth-child(4) { animation-delay: 0.25s; }
+
+    .score-card-icon {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .score-card-icon.reading { background: var(--teal-pale); }
+    .score-card-icon.listen  { background: var(--gold-pale); }
+    .score-card-icon.speak   { background: #f0e6f5; }
+    .score-card-icon.write   { background: #e8f5e9; }
+
+    .score-card-label { font-size: 0.76rem; color: var(--ink-soft); margin-bottom: 4px; font-weight: 600; }
+    .score-card-val   { font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; color: var(--ink); line-height: 1; }
+    .score-card-sub   { font-size: 0.7rem; color: var(--ink-soft); margin-top: 2px; }
+
+    .score-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--surface-2);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--teal), var(--gold));
+      animation: barGrow 0.9s cubic-bezier(0.4,0,0.2,1) both;
+      transform-origin: left;
+    }
+
+    /* Review list */
+    .review-section h2 {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      font-family: var(--font-body);
+      font-weight: 700;
+    }
+
+    .review-item {
+      background: white;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(26,26,46,0.07);
+      padding: 20px 22px;
+      margin-bottom: 10px;
+      position: relative;
+      transition: box-shadow 0.18s ease;
+      animation: fadeUp 0.3s both;
+    }
+
+    .review-item:hover { box-shadow: 0 4px 16px rgba(26,26,46,0.07); }
+
+    .review-item.correct-item { border-left: 4px solid var(--success); }
+    .review-item.wrong-item   { border-left: 4px solid var(--error); }
+
+    .review-q-text { font-size: 0.88rem; font-weight: 600; margin-bottom: 10px; color: var(--ink); padding-right: 80px; }
+    .review-answer { font-size: 0.82rem; color: var(--ink-soft); }
+    .review-answer .correct-ans { color: var(--success); font-weight: 600; }
+    .review-answer .wrong-ans   { color: var(--error);   font-weight: 600; text-decoration: line-through; }
+
+    .review-result-badge {
+      position: absolute;
+      top: 16px; right: 16px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 100px;
+      animation: badgePop 0.35s ease both;
+    }
+
+    .review-result-badge.correct { background: #e6f5ec; color: var(--success); }
+    .review-result-badge.wrong   { background: #fce8e8; color: var(--error); }
+
+    /* ── INTRO OVERLAY (section instructions) ── */
+    .section-intro-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,26,46,0.62);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      animation: overlayIn 0.3s ease both;
+    }
+
+    .section-intro-card {
+      background: white;
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15);
+      padding: 52px 48px 48px;
+      max-width: 560px;
+      width: 100%;
+      animation: cardDrop 0.38s cubic-bezier(0.34,1.56,0.64,1) both;
+      text-align: center;
+      position: relative;
+    }
+
+    /* ✕ CLOSE BUTTON */
+    .intro-close-btn {
+      position: absolute;
+      top: 18px; right: 18px;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(26,26,46,0.06);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-soft);
+      font-size: 1rem;
+      transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+      z-index: 10;
+    }
+
+    .intro-close-btn:hover {
+      background: rgba(255,80,80,0.1);
+      color: #e55;
+      transform: scale(1.1) rotate(90deg);
+    }
+
+    .section-intro-icon {
+      font-size: 3.8rem;
+      margin-bottom: 16px;
+      display: block;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .section-intro-card h2 {
+      font-size: 1.7rem;
+      margin-bottom: 12px;
+      animation: fadeUp 0.3s 0.1s ease both;
+    }
+
+    .section-intro-card > p {
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+      line-height: 1.75;
+      margin-bottom: 28px;
+      animation: fadeUp 0.3s 0.15s ease both;
+    }
+
+    .section-intro-meta {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 32px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(26,26,46,0.07);
+      animation: fadeUp 0.3s 0.2s ease both;
+    }
+
+    .section-intro-meta-item {
+      flex: 1;
+      text-align: center;
+      padding: 16px 8px;
+      background: var(--surface);
+      border-right: 1px solid rgba(26,26,46,0.06);
+      transition: background 0.18s ease;
+    }
+
+    .section-intro-meta-item:last-child { border-right: none; }
+    .section-intro-meta-item:hover { background: var(--teal-pale); }
+
+    .section-intro-meta-item .val {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .section-intro-meta-item .lbl {
+      font-size: 0.7rem;
+      color: var(--ink-soft);
+      font-weight: 600;
+      margin-top: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* Begin button inside overlay */
+    .btn-intro-begin {
+      width: 100%;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, var(--ink), #1a3d3d);
+      color: var(--gold-light);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: all 0.22s ease;
+      animation: fadeUp 0.3s 0.25s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-intro-begin::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--teal), #1a3d3d);
+      opacity: 0;
+      transition: opacity 0.22s ease;
+    }
+
+    .btn-intro-begin:hover::before { opacity: 1; }
+    .btn-intro-begin:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,26,46,0.22); }
+    .btn-intro-begin:active { transform: scale(0.98); }
+
+    .btn-intro-begin span { position: relative; z-index: 1; }
+
+    /* 2026 section badge inside overlay */
+    .section-2026-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gold-pale, #fdf5e6);
+      border: 1px solid rgba(200,149,58,0.3);
+      color: var(--gold, #c8953a);
+      padding: 4px 14px;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* ── TOAST NOTIFICATION ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--ink);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      z-index: 9999;
+      box-shadow: 0 8px 32px rgba(26,26,46,0.25);
+      animation: toastSlide 0.3s ease both;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.warning { border-left: 4px solid var(--gold); }
+    .toast.error   { border-left: 4px solid var(--error); }
+
+    /* ── SCORING INFO SECTION ── */
+    .scoring-info {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(26,26,46,0.07);
+      padding: 28px;
+      margin-bottom: 28px;
+    }
+
+    .scoring-info h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .band-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .band-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: var(--surface);
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--ink-soft);
+    }
+
+    .band-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(26,26,46,0.05);
+      color: var(--ink);
+    }
+
+    .band-table tr:last-child td { border-bottom: none; }
+
+    .band-chip {
+      display: inline-block;
+      background: var(--teal-pale);
+      color: var(--teal);
+      padding: 2px 10px;
+      border-radius: 100px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    /* ── anim-fadeUp helper ── */
+    .anim-fadeUp { animation: fadeUp 0.4s both; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .test-layout { grid-template-columns: 1fr; }
+      .test-passage-panel { max-height: 45vh; border-right: none; border-bottom: 1px solid rgba(26,26,46,0.08); }
+      .test-question-panel { max-height: none; }
+      .format-strip-inner { gap: 0; }
+    }
+
+    @media (max-width: 768px) {
+      .tpo-grid       { grid-template-columns: repeat(2, 1fr); }
+      .score-breakdown { grid-template-columns: 1fr; }
+      .section-intro-card { padding: 40px 24px 32px; }
+      .test-topbar    { padding: 0 3%; gap: 10px; }
+      .section-tabs   { display: none; }
+      .mobile-panel-toggle { display: flex; gap: 10px; margin-top: 12px; }
+      .mobile-panel-tab {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(26,26,46,0.09);
+        background: rgba(250,249,246,0.95);
+        color: var(--ink-soft);
+        font-weight: 700;
+        transition: var(--transition);
+        white-space: nowrap;
+      }
+      .mobile-panel-tab.active {
+        background: white;
+        color: var(--ink);
+        box-shadow: var(--shadow-sm);
+        border-color: rgba(26,26,46,0.12);
+      }
+      .test-passage-panel,
+      .test-question-panel {
+        max-height: none;
+      }
+      .test-passage-panel.mobile-hidden,
+      .test-question-panel.mobile-hidden {
+        display: none !important;
+      }
+      .format-item    { min-width: 130px; }
+      .info-banner-2026 { flex-direction: column; }
+    }
+
+    @media (max-width: 480px) {
+      .tpo-grid { grid-template-columns: 1fr; }
+      .section-intro-meta { flex-direction: column; }
+      .section-intro-meta-item { border-right: none; border-bottom: 1px solid rgba(26,26,46,0.06); }
+      .mobile-panel-toggle { gap: 8px; }
+      .mobile-panel-tab { padding: 10px 12px; font-size: 0.95rem; }
+    }
+  </style>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Vocal Academy" />
+  <link rel="apple-touch-icon" href="/icons/maskable_icon_x192.png" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     NAVBAR (same as all pages)
+══════════════════════════════════════ -->
+<nav class="navbar">
+  <a href="index.html" class="nav-brand">
+    <img
+      src="https://ukoegeqgkqqnbafkbkqg.supabase.co/storage/v1/object/public/assets/Logo.PNG"
+      alt="Vocal Academy Logo"
+      class="nav-logo-img"
+      style="height:42px;width:auto;object-fit:contain;display:block;border-radius:50%;"
+      onerror="this.style.display='none'; document.getElementById('nav-fallback-mark').style.display='flex';"
+    />
+    <div id="nav-fallback-mark" class="nav-logo-mark" style="display:none;">V</div>
+    <span>Vocal Academy</span>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="index.html" data-i18n="nav_home">Home</a></li>
+    <li><a href="#about" data-i18n="nav_about">About</a></li>
+    <li><a href="#levels" data-i18n="nav_levels">Levels</a></li>
+  </ul>
+
+  <div class="nav-right">
+    <div class="lang-switcher">
+      <button class="lang-btn active" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="dari">دری</button>
+      <button class="lang-btn" data-lang="pashto">پښتو</button>
+    </div>
+    <a href="login.html" class="btn btn-ghost btn-sm" data-i18n="nav_login">Log In</a>
+    <a href="login.html#signup" class="btn btn-gold btn-sm" data-i18n="nav_signup">Join Free</a>
+  </div>
+
+  <div class="nav-toggle" role="button" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 1: TPO SELECTION
+══════════════════════════════════════ -->
+<div id="screen-select" class="screen active selection-hero">
+
+  <div class="selection-header">
+    <!-- Decorative particles -->
+    <div class="header-particles" aria-hidden="true">
+      <div class="particle" style="top:20%;left:10%;--dur:7s;--delay:0s;width:3px;height:3px;"></div>
+      <div class="particle" style="top:60%;left:88%;--dur:9s;--delay:1s;width:4px;height:4px;"></div>
+      <div class="particle" style="top:40%;left:75%;--dur:6s;--delay:2s;"></div>
+      <div class="particle" style="top:75%;left:22%;--dur:8s;--delay:0.5s;width:3px;height:3px;"></div>
+      <div class="particle" style="top:15%;left:55%;--dur:11s;--delay:3s;width:2px;height:2px;"></div>
+    </div>
+
+    <div class="badge">🏆 TOEFL iBT 2026 Simulation</div>
+    <h1>Full Simulation Test System</h1>
+    <p>Choose a TPO below to begin your timed, full-length TOEFL iBT 2026 practice test. Updated for the new adaptive format and 1–6 band scoring.</p>
+
+    <!-- 2026 Update Banner -->
+    <div class="info-banner-2026">
+      <div class="ib-icon">⚡</div>
+      <div class="ib-content">
+        <h3>January 2026 Format — What's New</h3>
+        <div class="ib-pills">
+          <span class="info-pill">🎯 New 1–6 Band Score (replaces 0–120)</span>
+          <span class="info-pill">🔄 Adaptive Reading &amp; Listening</span>
+          <span class="info-pill">⏱ ~2 Hours Total</span>
+          <span class="info-pill">⚡ Results in 72 Hours</span>
+          <span class="info-pill">🌍 CEFR-Aligned</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Format Overview Strip -->
+  <div class="format-strip">
+    <div class="format-strip-inner">
+      <div class="format-item">
+        <div class="format-item-icon">📖</div>
+        <div class="format-item-name">Reading</div>
+        <div class="format-item-detail">50 items · 30 min<br>Adaptive · Academic</div>
+        <div class="format-item-score">B1 → C2</div>
+      </div>
+      <div class="format-item">
+        <div class="format-item-icon">🎧</div>
+        <div class="format-item-name">Listening</div>
+        <div class="format-item-detail">47 items · 29 min<br>Adaptive · Conversations</div>
+        <div class="format-item-score">B1 → C2</div>
+      </div>
+      <div class="format-item">
+        <div class="format-item-icon">✍️</div>
+        <div class="format-item-name">Writing</div>
+        <div class="format-item-detail">12 items · 23 min<br>Email + Discussion</div>
+        <div class="format-item-score">Band 1–6</div>
+      </div>
+      <div class="format-item">
+        <div class="format-item-icon">🗣️</div>
+        <div class="format-item-name">Speaking</div>
+        <div class="format-item-detail">11 items · 8 min<br>Interview format</div>
+        <div class="format-item-score">Band 1–6</div>
+      </div>
+      <div class="format-item">
+        <div class="format-item-icon">🏅</div>
+        <div class="format-item-name">Total Time</div>
+        <div class="format-item-detail">~2 hours total<br>Scores in 72 hours</div>
+        <div class="format-item-score">Overall: 1–6</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tpo-section">
+    <div class="tpo-section-title">
+      <h2>Available Tests</h2>
+      <div class="line"></div>
+      <span class="section-tag" style="margin:0;">54 TPOs</span>
+    </div>
+
+    <div class="tpo-grid" id="tpo-grid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 2: ACTIVE TEST
+══════════════════════════════════════ -->
+<div id="screen-test" class="screen">
+
+  <!-- Fixed top bar during test -->
+  <div class="test-topbar">
+    <div class="test-topbar-left">
+      <span class="test-title-label" id="topbar-tpo-label">TPO 1</span>
+      <div class="section-tabs" id="section-tabs">
+        <!-- Populated by JS -->
+      </div>
+      <div class="mobile-panel-toggle" id="mobile-panel-toggle">
+        <button class="mobile-panel-tab active" data-target="passage-panel">📖 Passage</button>
+        <button class="mobile-panel-tab" data-target="question-panel">❓ Question</button>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="test-timer" id="timer-wrapper">
+        <span class="timer-icon">⏱</span>
+        <span class="timer-display" id="timer-display">54:00</span>
+      </div>
+      <button class="nav-btn" id="btn-exit-test">✕ Exit</button>
+    </div>
+  </div>
+
+  <!-- Two-panel layout -->
+  <div class="test-layout">
+
+    <!-- LEFT: Passage / Prompt -->
+    <div class="test-passage-panel" id="passage-panel">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- RIGHT: Questions -->
+    <div class="test-question-panel" id="question-panel">
+      <div class="question-counter">
+        <span class="q-num" id="q-counter">Question 1 of 10</span>
+        <div class="q-dots" id="q-dots"></div>
+      </div>
+
+      <p class="question-text" id="q-text"></p>
+
+      <div class="option-list" id="option-list"></div>
+
+      <div class="question-nav">
+        <button class="nav-btn" id="btn-prev">← Previous</button>
+        <button class="nav-btn primary" id="btn-next">Next →</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 3: REPORT
+══════════════════════════════════════ -->
+<div id="screen-report" class="screen">
+
+  <div class="report-hero">
+    <div class="badge" style="background:rgba(200,149,58,0.18);border-color:rgba(200,149,58,0.4);color:var(--gold-light);">
+      📊 Test Report — 2026 Format
+    </div>
+    <div class="report-score-ring">
+      <div class="report-score-num" id="total-score">--</div>
+      <div class="report-score-label">/ 120</div>
+    </div>
+    <h1 id="report-title">Test Complete</h1>
+    <p id="report-subtitle">Here's how you did on your TOEFL iBT simulation.</p>
+
+    <!-- CEFR Band Display -->
+    <div class="cefr-band" id="cefr-band-display">
+      <span class="cb-label">CEFR Level</span>
+      <span class="cb-val" id="cefr-val">—</span>
+      <span class="cb-desc" id="cefr-desc">—</span>
+    </div>
+  </div>
+
+  <div class="report-body">
+
+    <!-- Score Breakdown -->
+    <div class="score-breakdown">
+      <div class="score-card">
+        <div class="score-card-icon reading">📖</div>
+        <div style="flex:1;">
+          <div class="score-card-label">Reading</div>
+          <div class="score-card-val" id="sc-reading">--</div>
+          <div class="score-card-sub">out of 30</div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="sb-reading" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="score-card">
+        <div class="score-card-icon listen">🎧</div>
+        <div style="flex:1;">
+          <div class="score-card-label">Listening</div>
+          <div class="score-card-val" id="sc-listening">--</div>
+          <div class="score-card-sub">out of 30</div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="sb-listening" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="score-card">
+        <div class="score-card-icon speak">🗣️</div>
+        <div style="flex:1;">
+          <div class="score-card-label">Speaking</div>
+          <div class="score-card-val" id="sc-speaking">--</div>
+          <div class="score-card-sub">out of 30</div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="sb-speaking" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="score-card">
+        <div class="score-card-icon write">✍️</div>
+        <div style="flex:1;">
+          <div class="score-card-label">Writing</div>
+          <div class="score-card-val" id="sc-writing">--</div>
+          <div class="score-card-sub">out of 30</div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="sb-writing" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2026 Band Score Info -->
+    <div class="scoring-info">
+      <h3>📐 2026 Score Scale — CEFR &amp; IELTS Comparison</h3>
+      <table class="band-table">
+        <thead>
+          <tr>
+            <th>TOEFL Band (New)</th>
+            <th>CEFR Level</th>
+            <th>Proficiency</th>
+            <th>IELTS Equiv.</th>
+            <th>Old 0–120</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="band-chip">6</span></td><td>C2</td><td>Mastery</td><td>8.5–9.0</td><td>—</td></tr>
+          <tr><td><span class="band-chip">5–5.5</span></td><td>C1</td><td>Advanced</td><td>7.0–8.0</td><td>95–120</td></tr>
+          <tr><td><span class="band-chip">4–4.5</span></td><td>B2</td><td>Upper Intermediate</td><td>6.0–6.5</td><td>72–94</td></tr>
+          <tr><td><span class="band-chip">3–3.5</span></td><td>B1</td><td>Intermediate</td><td>5.0–5.5</td><td>—</td></tr>
+          <tr><td><span class="band-chip">2–2.5</span></td><td>A2</td><td>Elementary</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Question Review -->
+    <div class="review-section">
+      <h2>📋 Question Review</h2>
+      <div id="review-list"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-top:36px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-try-again">↩ Try Again</button>
+      <a href="toefl-test.html" class="btn btn-outline">← All Tests</a>
+      <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SECTION INTRO OVERLAY
+══════════════════════════════════════ -->
+<div class="section-intro-overlay" id="section-intro" style="display:none;">
+  <div class="section-intro-card">
+
+    <!-- ✕ Close Button -->
+    <button class="intro-close-btn" id="btn-intro-close" title="Close">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="section-2026-badge">⚡ TOEFL iBT 2026</div>
+    <span class="section-intro-icon" id="intro-icon">📖</span>
+    <h2 id="intro-title">Reading Section</h2>
+    <p id="intro-desc">Read the passage carefully and answer the questions that follow. You may refer back to the passage at any time.</p>
+
+    <div class="section-intro-meta">
+      <div class="section-intro-meta-item">
+        <div class="val" id="intro-questions">10</div>
+        <div class="lbl">Questions</div>
+      </div>
+      <div class="section-intro-meta-item">
+        <div class="val" id="intro-time">54</div>
+        <div class="lbl">Minutes</div>
+      </div>
+      <div class="section-intro-meta-item">
+        <div class="val" id="intro-points">30</div>
+        <div class="lbl">Points</div>
+      </div>
+    </div>
+
+    <button class="btn-intro-begin" id="btn-intro-start">
+      <span>Begin Section →</span>
+    </button>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     FOOTER (same as all pages)
+══════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">Vocal Academy <span style="color:var(--gold);">صدا</span></div>
+        <p class="footer-desc">Empowering Afghan women through structured English education.</p>
+        <p style="font-size:0.8rem;color:rgba(255,255,255,0.3);margin-top:12px;font-style:italic;">"Every word learned is a door opened."</p>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="index.html">Home</a>
+        <a href="#levels">Levels</a>
+        <a href="login.html">Log In</a>
+        <a href="login.html#signup">Join Free</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a href="#">English Grammar Guide</a>
+        <a href="#">Pronunciation Tips</a>
+        <a href="#">TOEFL Prep Guide</a>
+        <a href="#">AI Tutor FAQ</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="mailto:info@vocalacademy.af">info@vocalacademy.af</a>
+        <a href="#">WhatsApp Support</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Vocal Academy — صدا. All rights reserved.</span>
+      <span>🇦🇫 Made with ❤️ for Afghan Women</span>
+    </div>
+  </div>
+</footer>
+
+
+<!-- ══════════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════════ -->
+<div id="toast-container"></div>
+
+
+<script>
+/* ══════════════════════════════════════════════════
+   VOCAL ACADEMY — TOEFL TEST SYSTEM (2026 Edition)
+   Full simulation with Reading, Listening, Speaking, Writing
+   Updated: Adaptive format, 1–6 band scoring, CEFR alignment
+══════════════════════════════════════════════════ */
+
+/* ── TOAST UTILITY ── */
+function showToast(msg, type = 'success', duration = 3000) {
+  const icons = { success: '✅', warning: '⚠️', error: '❌' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'toastSlide 0.3s ease reverse both';
+    setTimeout(() => el.remove(), 300);
+  }, duration);
+}
+
+/* ── DATA: TOEFL 2026 Questions ── */
+const SECTIONS = [
+  {
+    id: 'reading',
+    name: 'Reading',
+    icon: '📖',
+    time: 30,   // 2026 format: 30 min
+    points: 30,
+    desc2026: 'Academic passage reading — 2026 adaptive format. Harder module if high-performing.',
+    passage: {
+      title: 'The Origins of Agriculture',
+      label: 'Reading Passage — Academic Text',
+      body: `<p>The development of agriculture represents one of the most significant transformations in human history. Beginning approximately 10,000 years ago, small groups of hunter-gatherers in various regions of the world independently began to cultivate plants and domesticate animals. This transition, often called the <span class="highlight">Neolithic Revolution</span>, fundamentally altered the way humans interacted with their environment.</p>
+      <p>Scholars have long debated the reasons behind this shift. Some argue that population pressure forced communities to find more reliable food sources. Others suggest that climate change at the end of the last Ice Age made certain environments more conducive to cultivation. A third theory proposes that social factors, such as the desire to produce surplus goods for feasts and ceremonies, motivated early farmers.</p>
+      <p>The earliest evidence of agriculture comes from the Fertile Crescent, a region stretching across parts of modern-day Iraq, Syria, Turkey, and Israel. Here, wild varieties of wheat, barley, and legumes were first domesticated. Around the same time, rice cultivation emerged independently in China's Yangtze River valley, while maize was first grown in Mesoamerica several thousand years later.</p>
+      <p>Agriculture brought profound changes to human societies. Permanent settlements replaced nomadic lifestyles, allowing populations to grow dramatically. Specialization of labor became possible as not everyone needed to hunt or gather food. However, these developments also introduced new challenges: dependence on fewer food types made communities vulnerable to crop failure, and living in close proximity to domesticated animals exposed humans to new diseases.</p>`
+    },
+    questions: [
+      {
+        text: 'According to the passage, what term is used to describe the transition from hunter-gathering to agriculture?',
+        options: ['The Agricultural Revolution', 'The Neolithic Revolution', 'The Fertile Crescent Period', 'The Paleolithic Shift'],
+        answer: 1
+      },
+      {
+        text: 'The word "conducive" in paragraph 2 is closest in meaning to:',
+        options: ['resistant', 'favorable', 'dangerous', 'unrelated'],
+        answer: 1
+      },
+      {
+        text: 'According to the passage, where did rice cultivation first emerge?',
+        options: ['The Fertile Crescent', 'Mesoamerica', 'The Yangtze River valley', 'The Nile Delta'],
+        answer: 2
+      },
+      {
+        text: 'Which of the following is NOT mentioned as a consequence of agriculture?',
+        options: ['Permanent settlements', 'Population growth', 'Increased trade with distant regions', 'Exposure to new diseases'],
+        answer: 2
+      },
+      {
+        text: 'The author mentions "feasts and ceremonies" in order to:',
+        options: ['Criticize early agricultural practices', 'Illustrate a social theory about why agriculture began', 'Describe how crops were used after harvest', 'Explain why populations increased'],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 'listening',
+    name: 'Listening',
+    icon: '🎧',
+    time: 29,   // 2026 format: 29 min
+    points: 30,
+    desc2026: 'Listen to conversations, announcements, and academic talks — 47 items. Adaptive.',
+    passage: {
+      title: 'Lecture: Urban Heat Islands',
+      label: 'Listening — Lecture Transcript',
+      body: `<p><em style="color:var(--teal);font-weight:600;">[Audio Transcript — Listen and Choose a Response]</em></p>
+      <p>Professor: Good morning everyone. Today we're going to talk about a phenomenon that affects millions of people living in cities around the world — the urban heat island effect. Now, who can tell me what that means? Anyone? Okay, let me explain.</p>
+      <p>An urban heat island — or UHI — refers to the fact that cities are significantly warmer than the surrounding rural areas. We're talking about temperature differences of anywhere from 1 to 7 degrees Celsius. Now, why does this happen?</p>
+      <p>Well, the main reason is that urban surfaces — things like asphalt, concrete, and brick — absorb and retain heat much more efficiently than natural surfaces like soil or vegetation. At night, when the sun goes down, rural areas cool down quickly because the ground releases heat rapidly. But in cities, all that concrete and asphalt continues releasing stored heat for hours.</p>
+      <p>There's also reduced vegetation. Trees and plants help cool the air through a process called evapotranspiration — essentially, water evaporating from leaves creates a cooling effect. Cities have far fewer trees, so this natural cooling mechanism is weakened. And then there's the heat generated by human activity itself — cars, air conditioning units, factories — all releasing thermal energy into the urban environment.</p>
+      <p>The consequences are significant. Higher temperatures increase energy demand for cooling, which in turn worsens air quality. Heat-related illnesses spike during summer months. Studies have shown that urban heat islands can even alter local precipitation patterns.</p>`
+    },
+    questions: [
+      {
+        text: 'What is the main topic of the professor\'s lecture?',
+        options: ['Global warming and its causes', 'The urban heat island effect', 'How trees reduce pollution', 'City planning and architecture'],
+        answer: 1
+      },
+      {
+        text: 'According to the professor, by how many degrees Celsius can urban areas be warmer than rural areas?',
+        options: ['1 to 3 degrees', '3 to 5 degrees', '1 to 7 degrees', '5 to 10 degrees'],
+        answer: 2
+      },
+      {
+        text: 'What is "evapotranspiration" as described in the lecture?',
+        options: ['A type of urban pollution', 'A cooling effect from water evaporating from plant leaves', 'Heat stored in concrete surfaces', 'A measurement of city temperature'],
+        answer: 1
+      },
+      {
+        text: 'Which of the following does the professor NOT mention as a cause of urban heat islands?',
+        options: ['Asphalt and concrete surfaces', 'Reduced vegetation', 'Underground water systems', 'Heat from cars and air conditioning'],
+        answer: 2
+      },
+      {
+        text: 'What does the professor say about urban heat islands and precipitation?',
+        options: ['They have no effect on rainfall', 'They can alter local precipitation patterns', 'They cause droughts in rural areas', 'They increase snowfall in winter'],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 'speaking',
+    name: 'Speaking',
+    icon: '🗣️',
+    time: 8,    // 2026 format: 8 min
+    points: 30,
+    desc2026: '2026 Speaking: Listen and Repeat (7 sentences) + Take an Interview (4 questions, 45 sec each). No prep time.',
+    passage: {
+      title: 'Speaking Task — Take an Interview',
+      label: 'Speaking Section — 2026 Format',
+      body: `<div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:28px;margin-bottom:20px;">
+        <p style="font-weight:700;margin-bottom:12px;color:var(--ink);">📋 Task Type: Take an Interview</p>
+        <p style="font-size:0.95rem;line-height:1.8;color:var(--ink-soft);">You will be asked 4 questions about a given topic. Each question gives you <strong>45 seconds</strong> to answer with <strong>no preparation time</strong>. Questions increase in difficulty.</p>
+        <div style="margin-top:18px;padding-top:18px;border-top:1px solid rgba(26,26,46,0.08);">
+          <p style="font-size:0.82rem;color:var(--ink-soft);">⚡ <strong>2026 Format:</strong> Speaking = 11 items in 8 minutes &nbsp;|&nbsp; Scored 1–6 (CEFR-aligned)</p>
+        </div>
+      </div>
+      <div style="background:var(--teal-pale);border-radius:var(--radius-md);padding:20px;border:1px solid rgba(45,125,125,0.18);">
+        <p style="font-weight:700;margin-bottom:8px;color:var(--teal);">📝 Topic: Urban Life vs. Rural Life</p>
+        <p style="font-size:0.9rem;color:var(--ink-soft);line-height:1.75;">Some people prefer to live in a large city. Others prefer to live in a small town or rural area. Respond to the questions below, using specific details and examples.</p>
+      </div>`
+    },
+    questions: [
+      {
+        text: 'In the 2026 TOEFL Speaking section, how long do you have to answer each interview question?',
+        options: ['15 seconds', '30 seconds', '45 seconds', '60 seconds'],
+        answer: 2
+      },
+      {
+        text: 'Which of the following best demonstrates strong "topic development" in TOEFL speaking?',
+        options: ['Speaking slowly to avoid all mistakes', 'Providing a clear opinion supported by specific examples', 'Using memorized template responses word-for-word', 'Using complex vocabulary even without certainty of meaning'],
+        answer: 1
+      },
+      {
+        text: 'How should you structure a strong 45-second TOEFL speaking response?',
+        options: ['Only give your opinion with no reasons', 'Introduction → 2 reasons/examples → brief conclusion', 'List every possible argument on both sides', 'Speak about only one reason in exhaustive detail'],
+        answer: 1
+      },
+      {
+        text: 'In the new 2026 TOEFL Speaking format, what does "Listen and Repeat" require?',
+        options: ['Recording and replaying your own voice', 'Listening to a passage and answering questions about it', 'Repeating sentences about a campus or daily life topic', 'Summarizing an academic lecture in your own words'],
+        answer: 2
+      },
+      {
+        text: 'What does "delivery" mean in TOEFL Speaking scoring?',
+        options: ['The length of your response', 'How smoothly, clearly, and fluently you speak', 'Whether you use formal grammar only', 'The number of vocabulary words you use'],
+        answer: 1
+      }
+    ]
+  },
+  {
+    id: 'writing',
+    name: 'Writing',
+    icon: '✍️',
+    time: 23,   // 2026 format: 23 min
+    points: 30,
+    desc2026: '2026 Writing: Build a Sentence + Write an Email + Write for an Academic Discussion (10 min). 12 items total.',
+    passage: {
+      title: 'Writing Task — Academic Discussion',
+      label: 'Writing Section — 2026 Format',
+      body: `<div style="background:var(--surface-2);border-radius:var(--radius-lg);padding:28px;margin-bottom:20px;">
+        <p style="font-weight:700;margin-bottom:14px;color:var(--ink);">📋 Task: Write for an Academic Discussion</p>
+        <p style="font-size:0.9rem;line-height:1.85;color:var(--ink-soft);">Your professor has posted the following question on the class discussion board. You have <strong>10 minutes</strong> to write a post responding to the professor's question. You can also respond to a classmate's post.</p>
+        <div style="margin-top:18px;padding:16px;background:white;border-radius:10px;border:1px solid rgba(26,26,46,0.08);">
+          <p style="font-size:0.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:8px;">👩‍🏫 Professor Martinez:</p>
+          <p style="font-size:0.9rem;color:var(--ink);line-height:1.75;">This week we discussed the rise of remote work. In your opinion, does working from home benefit employees more than employers, or is the opposite true? Use specific reasons and examples to support your view.</p>
+        </div>
+        <div style="margin-top:14px;padding:14px;background:rgba(45,125,125,0.06);border-radius:8px;border-left:3px solid var(--teal);">
+          <p style="font-size:0.8rem;font-weight:600;color:var(--teal);margin-bottom:4px;">🎓 Classmate (Aisha):</p>
+          <p style="font-size:0.83rem;color:var(--ink-soft);line-height:1.7;">I think employees benefit more because they save time on commuting and have more flexibility. For me, working from home helped me balance family responsibilities without reducing productivity.</p>
+        </div>
+      </div>
+      <div style="background:var(--gold-pale);border-radius:var(--radius-md);padding:20px;border:1px solid rgba(200,149,58,0.2);">
+        <p style="font-weight:700;margin-bottom:8px;color:var(--gold);">⚡ 2026 Format Note</p>
+        <p style="font-size:0.86rem;color:var(--ink-soft);line-height:1.75;">Writing = 12 items in ~23 minutes. Types: <strong>Build a Sentence</strong>, <strong>Write an Email</strong>, <strong>Write for an Academic Discussion</strong>. Scored with Human + AI raters. Band score 1–6.</p>
+      </div>`
+    },
+    questions: [
+      {
+        text: 'In the 2026 TOEFL Writing section, how long do you have for the "Write for an Academic Discussion" task?',
+        options: ['5 minutes', '10 minutes', '20 minutes', '30 minutes'],
+        answer: 1
+      },
+      {
+        text: 'Which of the following is a NEW writing task type in the 2026 TOEFL format?',
+        options: ['Write an Academic Essay', 'Write for an Academic Discussion', 'Write a Summary of a Lecture', 'Write an Integrated Essay'],
+        answer: 1
+      },
+      {
+        text: 'Which writing style is most appropriate for TOEFL Academic Discussion writing?',
+        options: ['Informal, using slang and contractions', 'Highly personal, using "I think" only without reasons', 'Clear and academic, with a stated position supported by specific reasons', 'Creative storytelling with fictional examples'],
+        answer: 2
+      },
+      {
+        text: 'How are TOEFL iBT 2026 Writing and Speaking tasks scored?',
+        options: ['Only by automated AI engines', 'Only by trained human raters', 'By a combination of human raters and AI scoring engines', 'By other test takers'],
+        answer: 2
+      },
+      {
+        text: 'How should you cite information from the lecture in an integrated writing response?',
+        options: ['Copy sentences exactly from the transcript', 'Use phrases like "The professor argues..." or "According to the lecture..."', 'Invent supporting examples to fill word count', 'Only use information from the reading passage'],
+        answer: 1
+      }
+    ]
+  }
+];
+
+/* ── STATE ── */
+let state = {
+  currentTPO: null,
+  currentSection: 0,
+  currentQuestion: 0,
+  answers: [],
+  timerInterval: null,
+  timeLeft: 0
+};
+
+/* ── CEFR LOOKUP ── */
+function getCEFR(score120) {
+  if (score120 >= 95) return { band: '5.0–6.0', level: 'C1–C2', desc: 'Advanced / Mastery', ielts: '7.0–9.0' };
+  if (score120 >= 72) return { band: '4.0–4.5', level: 'B2',    desc: 'Upper Intermediate', ielts: '6.0–6.5' };
+  if (score120 >= 55) return { band: '3.5–4.0', level: 'B1',    desc: 'Intermediate', ielts: '5.0–5.5' };
+  return { band: '1.0–3.0', level: 'A1–B1', desc: 'Beginner–Intermediate', ielts: '—' };
+}
+
+/* ── INIT TPO GRID ── */
+function initTPOGrid() {
+  const grid = document.getElementById('tpo-grid');
+  const progress = JSON.parse(localStorage.getItem('toefl_progress') || '{}');
+  let html = '';
+
+  for (let i = 1; i <= 54; i++) {
+    const p = progress[`tpo_${i}`] || { pct: 0, score: null };
+    const statusClass = p.score !== null ? 'done' : (p.pct > 0 ? 'in-progress' : 'new');
+    const statusText  = p.score !== null ? `✓ ${p.score}/120` : (p.pct > 0 ? 'In Progress' : 'New');
+
+    html += `
+      <div class="tpo-card anim-fadeUp" style="animation-delay:${(i % 12) * 0.025}s" onclick="startTPO(${i})">
+        <div class="tpo-card-num">${String(i).padStart(2,'0')}</div>
+        <h3>TPO ${i}</h3>
+        <div class="tpo-card-meta">4 Sections · ~90 min · 2026 Format</div>
+        <div class="tpo-progress-track">
+          <div class="tpo-progress-fill" style="width:${p.pct}%"></div>
+        </div>
+        <div class="tpo-card-footer">
+          <span class="tpo-status ${statusClass}">${statusText}</span>
+          <button class="tpo-start-btn" onclick="event.stopPropagation();startTPO(${i})">
+            ${p.score !== null ? 'Retake' : 'Start'}
+          </button>
+        </div>
+      </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+/* ── START TPO ── */
+function startTPO(num) {
+  state.currentTPO = num;
+  state.currentSection = 0;
+  state.currentQuestion = 0;
+  state.answers = SECTIONS.map(s => new Array(s.questions.length).fill(null));
+  showSectionIntro(0);
+}
+
+/* ── SECTION INTRO OVERLAY ── */
+function showSectionIntro(sectionIdx) {
+  const s = SECTIONS[sectionIdx];
+  document.getElementById('intro-icon').textContent = s.icon;
+  document.getElementById('intro-title').textContent = s.name + ' Section';
+  document.getElementById('intro-questions').textContent = s.questions.length;
+  document.getElementById('intro-time').textContent = s.time;
+  document.getElementById('intro-points').textContent = s.points;
+  document.getElementById('intro-desc').textContent = s.desc2026;
+
+  const overlay = document.getElementById('section-intro');
+  overlay.style.display = 'flex';
+  // Re-trigger animation
+  overlay.style.animation = 'none';
+  overlay.offsetHeight; // reflow
+  overlay.style.animation = '';
+
+  document.getElementById('btn-intro-start').onclick = () => {
+    closeIntroOverlay();
+    enterTestScreen(sectionIdx);
+  };
+
+  document.getElementById('btn-intro-close').onclick = () => {
+    closeIntroOverlay();
+    if (sectionIdx === 0) showScreen('screen-select');
+  };
+}
+
+function closeIntroOverlay() {
+  const overlay = document.getElementById('section-intro');
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity 0.2s ease';
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    overlay.style.opacity = '';
+    overlay.style.transition = '';
+  }, 200);
+}
+
+// Close on backdrop click
+document.getElementById('section-intro').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeIntroOverlay();
+    if (state.currentSection === 0 && !document.getElementById('screen-test').classList.contains('active')) {
+      showScreen('screen-select');
+    }
+  }
+});
+
+/* ── ENTER TEST SCREEN ── */
+function enterTestScreen(sectionIdx) {
+  showScreen('screen-test');
+  state.currentSection = sectionIdx;
+  state.currentQuestion = 0;
+
+  document.getElementById('topbar-tpo-label').textContent = `TPO ${state.currentTPO}`;
+
+  const tabs = document.getElementById('section-tabs');
+  tabs.innerHTML = SECTIONS.map((s, i) =>
+    `<button class="section-tab ${i === sectionIdx ? 'active' : (i < sectionIdx ? 'done' : '')}"
+      onclick="confirmSwitchSection(${i})">${s.icon} ${s.name}</button>`
+  ).join('');
+
+  startTimer(SECTIONS[sectionIdx].time * 60);
+
+  renderPassage();
+  renderQuestion();
+  showToast(`${SECTIONS[sectionIdx].name} section started — ${SECTIONS[sectionIdx].time} minutes`, 'success');
+}
+
+/* ── PASSAGE ── */
+function renderPassage() {
+  const s = SECTIONS[state.currentSection];
+  const panel = document.getElementById('passage-panel');
+  panel.style.opacity = '0';
+  panel.style.transform = 'translateX(-8px)';
+  panel.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+
+  panel.innerHTML = `
+    <div class="passage-label">${s.passage.label}</div>
+    <h2 class="passage-title">${s.passage.title}</h2>
+    <div class="passage-body">${s.passage.body}</div>
+  `;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      panel.style.opacity = '1';
+      panel.style.transform = 'translateX(0)';
+    });
+  });
+}
+
+/* ── QUESTION ── */
+function renderQuestion() {
+  const s     = SECTIONS[state.currentSection];
+  const q     = s.questions[state.currentQuestion];
+  const ans   = state.answers[state.currentSection];
+  const total = s.questions.length;
+  const curr  = state.currentQuestion;
+
+  document.getElementById('q-counter').textContent = `Question ${curr + 1} of ${total}`;
+
+  const qText = document.getElementById('q-text');
+  qText.style.opacity = '0';
+  qText.style.transform = 'translateY(6px)';
+  qText.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+  qText.textContent = q.text;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    qText.style.opacity = '1';
+    qText.style.transform = 'translateY(0)';
+  }));
+
+  // Dots
+  const dots = document.getElementById('q-dots');
+  dots.innerHTML = s.questions.map((_, i) =>
+    `<div class="q-dot ${i === curr ? 'current' : (ans[i] !== null ? 'answered' : '')}"
+      onclick="jumpToQuestion(${i})" title="Q${i+1}"></div>`
+  ).join('');
+
+  // Options
+  const list = document.getElementById('option-list');
+  list.innerHTML = q.options.map((opt, i) => `
+    <div class="option-item ${ans[curr] === i ? 'selected' : ''}"
+      onclick="selectOption(${i})">
+      <div class="option-letter">${'ABCD'[i]}</div>
+      <div class="option-text">${opt}</div>
+    </div>
+  `).join('');
+
+  // Nav
+  document.getElementById('btn-prev').disabled = curr === 0;
+  const isLast        = curr === total - 1;
+  const isLastSection = state.currentSection === SECTIONS.length - 1;
+  const nextBtn       = document.getElementById('btn-next');
+
+  if (isLast && isLastSection) {
+    nextBtn.textContent = '📊 Submit Test';
+    nextBtn.onclick = submitTest;
+  } else if (isLast) {
+    nextBtn.textContent = 'Next Section →';
+    nextBtn.onclick = nextSection;
+  } else {
+    nextBtn.textContent = 'Next →';
+    nextBtn.onclick = nextQuestion;
+  }
+}
+
+function selectOption(i) {
+  state.answers[state.currentSection][state.currentQuestion] = i;
+  renderQuestion();
+}
+
+function nextQuestion() {
+  if (state.currentQuestion < SECTIONS[state.currentSection].questions.length - 1) {
+    state.currentQuestion++;
+    renderQuestion();
+  }
+}
+
+function prevQuestion() {
+  if (state.currentQuestion > 0) {
+    state.currentQuestion--;
+    renderQuestion();
+  }
+}
+
+function jumpToQuestion(i) {
+  state.currentQuestion = i;
+  renderQuestion();
+}
+
+function nextSection() {
+  clearInterval(state.timerInterval);
+  if (state.currentSection < SECTIONS.length - 1) {
+    showSectionIntro(state.currentSection + 1);
+  } else {
+    submitTest();
+  }
+}
+
+function confirmSwitchSection(i) {
+  if (i <= state.currentSection) return; // Can't go back
+}
+
+/* ── TIMER ── */
+function startTimer(seconds) {
+  clearInterval(state.timerInterval);
+  state.timeLeft = seconds;
+  updateTimerDisplay();
+  state.timerInterval = setInterval(() => {
+    state.timeLeft--;
+    updateTimerDisplay();
+    if (state.timeLeft === 120) showToast('⚠️ 2 minutes remaining!', 'warning');
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timerInterval);
+      nextSection();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m  = Math.floor(state.timeLeft / 60);
+  const s  = state.timeLeft % 60;
+  const el = document.getElementById('timer-display');
+  const tw = document.getElementById('timer-wrapper');
+  const ts = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  el.textContent = ts;
+
+  if (state.timeLeft < 120) {
+    el.classList.add('warning');
+    tw.classList.add('warning-bg');
+  } else {
+    el.classList.remove('warning');
+    tw.classList.remove('warning-bg');
+  }
+}
+
+/* ── SUBMIT TEST ── */
+function submitTest() {
+  clearInterval(state.timerInterval);
+
+  const scores = SECTIONS.map((s, si) => {
+    const ans = state.answers[si];
+    let correct = 0;
+    s.questions.forEach((q, qi) => {
+      if (q.answer === -1) { correct += 0.5; return; }
+      if (ans[qi] === q.answer) correct++;
+    });
+    return Math.round((correct / s.questions.length) * s.points);
+  });
+
+  const total = scores.reduce((a,b) => a+b, 0);
+
+  const progress = JSON.parse(localStorage.getItem('toefl_progress') || '{}');
+  progress[`tpo_${state.currentTPO}`] = { pct: 100, score: total };
+  localStorage.setItem('toefl_progress', JSON.stringify(progress));
+
+  showReport(scores, total);
+}
+
+/* ── REPORT ── */
+function showReport(scores, total) {
+  showScreen('screen-report');
+
+  document.getElementById('total-score').textContent = total;
+  document.getElementById('report-title').textContent = `TPO ${state.currentTPO} Complete!`;
+
+  const label = total >= 100 ? '🏆 Excellent Performance!' :
+                total >= 80  ? '✨ Great Job!' :
+                total >= 60  ? '📈 Keep Practicing!' : '💪 You Can Do Better!';
+  document.getElementById('report-subtitle').textContent = label;
+
+  // CEFR band
+  const cefr = getCEFR(total);
+  document.getElementById('cefr-val').textContent  = cefr.level;
+  document.getElementById('cefr-desc').textContent = `${cefr.desc} · Band ${cefr.band} · IELTS ${cefr.ielts}`;
+
+  const ids = ['reading','listening','speaking','writing'];
+  scores.forEach((sc, i) => {
+    document.getElementById(`sc-${ids[i]}`).textContent = sc;
+    const bar = document.getElementById(`sb-${ids[i]}`);
+    bar.style.width = '0%';
+    setTimeout(() => { bar.style.width = `${(sc/30)*100}%`; bar.style.transition = 'width 0.9s cubic-bezier(0.4,0,0.2,1)'; }, 300 + i * 100);
+  });
+
+  // Review list
+  const list = document.getElementById('review-list');
+  list.innerHTML = SECTIONS.flatMap((s, si) =>
+    s.questions.map((q, qi) => {
+      const userAns = state.answers[si][qi];
+      const correct = q.answer === -1 ? true : userAns === q.answer;
+      const userText = userAns !== null ? q.options[userAns] : 'Not answered';
+      const corrText = q.answer >= 0   ? q.options[q.answer] : 'Open-ended';
+      return `
+        <div class="review-item ${correct ? 'correct-item' : 'wrong-item'}" style="animation-delay:${qi*0.04}s">
+          <div class="review-result-badge ${correct ? 'correct' : 'wrong'}">${correct ? '✓ Correct' : '✗ Wrong'}</div>
+          <div class="review-q-text">${s.name}: ${q.text}</div>
+          <div class="review-answer">
+            Your answer: <span class="${correct ? 'correct-ans' : 'wrong-ans'}">${userText}</span>
+            ${!correct ? ` &nbsp;|&nbsp; Correct: <span class="correct-ans">${corrText}</span>` : ''}
+          </div>
+        </div>`;
+    })
+  ).join('');
+
+  document.getElementById('btn-try-again').onclick = () => startTPO(state.currentTPO);
+}
+
+/* ── SCREEN SWITCHER ── */
+function showScreen(id) {
+  const current = document.querySelector('.screen.active');
+  const target = document.getElementById(id);
+  if (!target || current === target) return;
+
+  const activateTarget = () => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('screen-exit'));
+    target.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (current) {
+    current.classList.add('screen-exit');
+    current.addEventListener('animationend', () => {
+      current.classList.remove('active', 'screen-exit');
+      activateTarget();
+    }, { once: true });
+  } else {
+    activateTarget();
+  }
+}
+
+/* ── EVENT LISTENERS ── */
+document.getElementById('btn-prev').addEventListener('click', prevQuestion);
+
+document.getElementById('btn-exit-test').addEventListener('click', () => {
+  if (confirm('Exit the test? Your progress will be lost.')) {
+    clearInterval(state.timerInterval);
+    showScreen('screen-select');
+    initTPOGrid();
+    showToast('Test exited. Your progress was not saved.', 'warning');
+  }
+});
+
+/* ── MOBILE NAV ── */
+document.querySelector('.nav-toggle')?.addEventListener('click', () => {
+  document.querySelector('.nav-links')?.classList.toggle('open');
+});
+
+/* ── KEYBOARD SHORTCUTS ── */
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('screen-test').classList.contains('active')) return;
+  if (e.key === 'ArrowRight') document.getElementById('btn-next').click();
+  if (e.key === 'ArrowLeft')  document.getElementById('btn-prev').click();
+  if (['1','2','3','4'].includes(e.key)) selectOption(parseInt(e.key) - 1);
+  if (e.key === 'Escape') document.getElementById('btn-exit-test').click();
+});
+
+/* ── BOOT ── */
+initTPOGrid();
+</script>
+
+<script src="/pwa-register.js"></script>
+</body>
+</html>
